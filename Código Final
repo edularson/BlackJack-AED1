@@ -1,0 +1,245 @@
+#include <iostream>
+#include <time.h>
+#include <stdlib.h>
+#include <ctime>
+#include <iomanip>
+#include <vector>
+#include "Pilha.h"
+
+using namespace std;
+
+void regras()
+{
+    cout << "REGRAS DO BLACKJACK: \n"
+         << endl;
+    cout << "1 - Objetivo: O objetivo e chegar o mais proximo possivel de 21 pontos sem ultrapassa-lo e, ao mesmo tempo, vencer o dealer.\n"
+         << endl;
+    cout << "2 - Cartas: As cartas numericas (de 2 a 10) tem seu valor nominal as cartas faciais (Valete, Rainha, Rei) valem 10 pontos cada, e o as pode valer 1 ou 11.\n"
+         << endl;
+    cout << "3 - Jogadores vs. Dealer: Os jogadores competem diretamente contra o dealer, não uns contra os outros.\n"
+         << endl;
+    cout << "4 - Inicio do Jogo: Cada jogador recebe duas cartas de frente para cima, enquanto o dealer recebe uma carta de frente para cima e outra de frente para baixo.\n"
+         << endl;
+    cout << "5 - Jogada dos Jogadores: Os jogadores podem optar por ficar (não receber mais cartas) ou pedir (receber mais cartas para tentar chegar mais perto de 21).\n"
+         << endl;
+    cout << "6 - Blackjack: Se um jogador receber um as e uma carta de valor 10 (um as e uma carta de 10 pontos) nas duas primeiras cartas," << endl
+         << "    isso e chamado de Blackjack e geralmente paga mais do que uma vitoria normal.\n"
+         << endl;
+    cout << "7 - Dealer: Depois que todos os jogadores fizerem suas jogadas, o dealer revela sua carta de baixo e deve pedir cartas adicionais ate que sua mão totalize 17 ou mais.\n"
+         << endl;
+    cout << "8 - Vitoria e Derrota: Se a mão do jogador for mais proxima de 21 do que a do dealer, o jogador ganha." << endl
+         << "    Se ultrapassar 21, o jogador perde automaticamente. Se a mão do dealer for mais proxima de 21 do que a do jogador, o jogador perde." << endl
+         << "    Se a mão do jogador e do dealer empatarem, e um push e o jogador recupera sua aposta.\n"
+         << endl;
+}
+
+void creditos()
+{
+    cout << "CREDITOS DO JOGO BLACKJACK:\n"
+         << endl;
+    cout << "\n    - ESTE CODIGO FOI FEITO PELOS ALUNOS EDUARDO LARSON E THIAGO CERON DE ALMEIDA\n"
+         << endl;
+    cout << "\n    - REFERENCIAS: CANAL DAVID SENA\n"
+         << endl;
+    cout << "\n    - MENCAO HONROSA AO NOSSO COLEGA HUGO ANDRADE DE OLIVEIRA, QUE NOS AJUDOU EM UMA PEQUENA PARTE DO CODIGO\n"
+         << endl;
+}
+
+string get_nome(int valor)
+{
+    vector<string> nomes = {" ", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
+
+    if (valor >= 1 && valor <= 13)
+    {
+        return nomes[valor];
+    }
+    else
+    {
+        return "Erro";
+    }
+}
+
+int get_valor(int valor)
+{
+    if (valor == 1)
+        return 11;
+    if (valor > 9)
+        return 10;
+    return valor;
+}
+
+int soma(no *pilha)
+{
+    int total{0};
+    int n_ases{0};
+    no *temp = pilha;
+
+    while (temp != NULL)
+    {
+        if (temp->info == 1)
+            n_ases += 1;
+        total += get_valor(temp->info);
+        temp = temp->link;
+    }
+
+    while (total > 21 && n_ases > 0)
+    {
+        n_ases -= 1;
+        total -= 10;
+    }
+
+    return total;
+}
+
+int puxar_carta()
+{
+    return rand() % 13 + 1;
+}
+
+string resumo(no *pilha)
+{
+    stringstream ss;
+    ss << "Pilha: [";
+    no *temp = pilha;
+    while (temp != NULL)
+    {
+        ss << get_nome(temp->info) << " ";
+        temp = temp->link;
+    }
+    ss << "]: " << soma(pilha);
+    return ss.str();
+}
+
+void loop_player(no *&jogador)
+{
+    while (true)
+    {
+        cout << "Player: " << resumo(jogador) << '\n';
+
+        cout << "Escolha 1 (Puxar) 2 (Parar): ";
+        int escolha{};
+        cin >> escolha;
+        cout << endl;
+        if (escolha == 1)
+            jogador = push(jogador, puxar_carta());
+        else if (escolha == 2)
+            break;
+        if (soma(jogador) > 21)
+            break;
+    }
+}
+
+void loop_dealer(no *&mesa, no *&jogador)
+{
+    while (true)
+    {
+        if (soma(mesa) > 21)
+            break;
+        if (soma(mesa) >= soma(jogador))
+            break;
+        getchar();
+        mesa = push(mesa, puxar_carta());
+        cout << "Dealer: " << resumo(mesa);
+    }
+}
+
+void imprimePilha(no *L)
+{
+    no *P = L;
+
+    cout << "Pilha: ";
+    if (P == nullptr)
+    {
+        cout << "vazia";
+    }
+    else
+    {
+        cout << "[ ";
+        while (P != nullptr)
+        {
+            cout << get_nome(P->info) << " ";
+            P = P->link;
+        }
+        cout << "]";
+    }
+    cout << endl;
+}
+
+void iniciarJogo()
+{
+    srand(time(0));
+    no *jogador = inicializaPilha(jogador);
+    no *mesa = inicializaPilha(mesa);
+
+    jogador = push(jogador, puxar_carta());
+    jogador = push(jogador, puxar_carta());
+    mesa = push(mesa, puxar_carta());
+
+    cout << "Dealer: ";
+    imprimePilha(mesa);
+
+    loop_player(jogador);
+
+    if (soma(jogador) > 21)
+    {
+        cout << "Player: ";
+        imprimePilha(jogador);
+        cout << "Voce Perdeu! \n"
+             << endl;
+        return;
+    }
+
+    loop_dealer(mesa, jogador);
+
+    if (soma(mesa) > 21)
+    {
+        cout << "\nParabens, voce ganhou!!!" << endl;
+    }
+    else
+    {
+        cout << "\nTente novamente!!!" << endl;
+    }
+}
+
+void menu()
+{
+    int c;
+    do
+    {
+        cout << "\n\n";
+        cout << "JOGO BLACKJACK \n";
+        cout << "1 - JOGAR\n";
+        cout << "2 - REGRAS DO JOGO\n";
+        cout << "3 - CREDITOS\n";
+        cout << "4 - SAIR\n";
+        cout << "\n Escolha: ";
+
+        cin >> c;
+        switch (c)
+        {
+        case 1:
+            system("cls");
+            iniciarJogo();
+            break;
+        case 2:
+            system("cls");
+            regras();
+            break;
+        case 3:
+            system("cls");
+            creditos();
+            break;
+        case 4:
+            system("cls");
+            exit(0);
+            break;
+        };
+    } while (c != 4);
+}
+
+int main()
+{
+    menu();
+
+    return 0;
+}
